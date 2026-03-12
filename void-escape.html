@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOID://ESCAPE</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{overflow:hidden;background:#000;font-family:'Courier New',monospace;color:#00f0ff;user-select:none}
+canvas{display:block;position:fixed;top:0;left:0;z-index:0}
+.screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;background:#000;transition:opacity 1s}
+.screen.hidden{opacity:0;pointer-events:none}
+#title-screen h1{font-size:clamp(2rem,6vw,4.5rem);letter-spacing:.3em;animation:glitchText 3s infinite;text-align:center}
+#title-screen .subtitle{color:#666;font-size:1rem;margin:.8rem 0 2rem;letter-spacing:.15em}
+#title-screen .instructions{color:#444;font-size:.8rem;margin-top:2rem;letter-spacing:.05em}
+.start-btn{background:none;border:2px solid #00f0ff;color:#00f0ff;padding:1rem 3rem;font-size:1.2rem;font-family:inherit;cursor:pointer;letter-spacing:.2em;transition:all .3s;animation:pulse 2s infinite}
+.start-btn:hover{background:#00f0ff22;box-shadow:0 0 30px #00f0ff44}
+#intro-screen{cursor:pointer}
+#intro-screen p{opacity:0;max-width:600px;text-align:center;line-height:1.8;margin:.5rem 1rem;font-size:clamp(.9rem,2vw,1.1rem);transition:opacity .8s,transform .8s;transform:translateY(10px)}
+#intro-screen p.visible{opacity:1;transform:translateY(0)}
+#game-ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none}
+#timer{position:absolute;top:20px;right:20px;font-size:2rem;letter-spacing:.1em}
+#timer.warning{color:#ff3333;animation:pulse 1s infinite}
+#timer.critical{color:#ff0000;animation:pulse .3s infinite}
+#mute-btn{position:absolute;top:20px;left:20px;background:none;border:1px solid #00f0ff44;color:#00f0ff;padding:8px 10px;font-size:1.2rem;cursor:pointer;pointer-events:all;border-radius:4px}
+#mute-btn:hover{background:#00f0ff22}
+#inventory{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px}
+.inv-item{background:#00f0ff11;border:1px solid #00f0ff44;padding:8px 16px;font-size:.85rem;border-radius:4px;box-shadow:0 0 10px #00f0ff22;white-space:nowrap}
+#notification{position:absolute;top:80px;left:50%;transform:translateX(-50%);font-size:1rem;opacity:0;transition:opacity .5s;text-align:center;text-shadow:0 0 10px #00f0ff;max-width:90%;white-space:nowrap}
+#hover-label{position:absolute;background:#000c;border:1px solid #00f0ff44;padding:4px 10px;font-size:.75rem;pointer-events:none;display:none;white-space:nowrap;border-radius:3px}
+#puzzle-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:50}
+#puzzle-modal.active{display:flex}
+#puzzle-box{background:#0a0a14;border:1px solid #00f0ff;box-shadow:0 0 30px #00f0ff33,inset 0 0 30px #00f0ff11;padding:2rem;border-radius:8px;max-width:500px;width:90%;position:relative;max-height:85vh;overflow-y:auto}
+#puzzle-close{position:absolute;top:10px;right:15px;background:none;border:none;color:#00f0ff;font-size:1.5rem;cursor:pointer;z-index:51;padding:5px}
+#puzzle-close:hover{color:#ff00aa}
+.puzzle-title{text-align:center;margin-bottom:1rem;font-size:1.3rem;letter-spacing:.1em}
+.puzzle-desc{text-align:center;color:#666;font-size:.85rem;margin-bottom:1.5rem}
+.wire-container{display:flex;justify-content:space-between;align-items:stretch;height:280px;position:relative;padding:0 10px}
+.wire-side{display:flex;flex-direction:column;justify-content:space-around;align-items:center}
+.wire-terminal{width:44px;height:44px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .2s;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:.7rem}
+.wire-terminal:hover{transform:scale(1.15);filter:brightness(1.3)}
+.wire-terminal.selected{border-color:#fff;box-shadow:0 0 20px currentColor}
+.wire-terminal.done{opacity:.5;cursor:default;border-color:#333}
+.wire-terminal.done::after{content:'✓';color:#fff;font-size:1.2rem}
+.wire-mid{flex:1;display:flex;align-items:center;justify-content:center;color:#333;font-size:.8rem;letter-spacing:.1em}
+.symbol-display{display:flex;justify-content:center;gap:2rem;margin:2rem 0;font-size:3rem}
+.symbol-display span{animation:fadeIn .5s both}
+.symbol-ref{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:1rem 0}
+.symbol-ref-item{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid #00f0ff22;border-radius:4px}
+.symbol-ref-item .sym{font-size:2rem;width:40px;text-align:center}
+.symbol-ref-item .num{font-size:1.5rem;color:#ff00aa}
+.safe-digits{display:flex;gap:15px;justify-content:center;margin:1.5rem 0}
+.safe-digit{display:flex;flex-direction:column;align-items:center;gap:4px}
+.safe-digit .val{font-size:2.5rem;width:55px;text-align:center;border:1px solid #00f0ff44;padding:8px 0;border-radius:4px;background:#0005}
+.safe-digit button{background:none;border:1px solid #00f0ff44;color:#00f0ff;width:40px;height:28px;cursor:pointer;font-size:1rem;border-radius:3px;transition:background .2s}
+.safe-digit button:hover{background:#00f0ff22}
+.puzzle-btn{display:block;margin:1rem auto 0;background:none;border:2px solid #00f0ff;color:#00f0ff;padding:.7rem 2rem;font-family:inherit;font-size:1rem;cursor:pointer;letter-spacing:.1em;border-radius:4px;transition:all .2s}
+.puzzle-btn:hover{background:#00f0ff22;box-shadow:0 0 15px #00f0ff33}
+.puzzle-btn.danger{border-color:#ff00aa;color:#ff00aa}
+.puzzle-btn.danger:hover{background:#ff00aa22}
+.terminal-screen{background:#000;border:1px solid #0a3;padding:1.2rem;font-family:'Courier New',monospace;line-height:1.6;border-radius:4px}
+.terminal-screen .prompt{color:#0a3}
+.terminal-screen .data{color:#0f6;word-break:break-all}
+.cipher-slider{width:100%;margin:.8rem 0;accent-color:#00f0ff;cursor:pointer}
+.cipher-shift-label{text-align:center;color:#0a3;font-size:1.2rem;margin-top:.5rem}
+.simon-container{display:flex;flex-direction:column;align-items:center}
+.simon-board{width:260px;height:260px;border-radius:50%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;overflow:hidden;border:4px solid #222;margin:1rem}
+.simon-quad{cursor:pointer;transition:filter .1s,opacity .1s;opacity:.5}
+.simon-quad:hover{opacity:.7}
+.simon-quad.flash{opacity:1!important;filter:brightness(2.5)}
+.simon-quad.blue{background:#2255ff;border-radius:100% 0 0 0}
+.simon-quad.red{background:#ff2255;border-radius:0 100% 0 0}
+.simon-quad.green{background:#22cc55;border-radius:0 0 0 100%}
+.simon-quad.yellow{background:#ddcc22;border-radius:0 0 100% 0}
+.simon-status{font-size:.9rem;margin-top:.5rem;min-height:1.5rem;text-align:center}
+.keypad-display{background:#000;border:1px solid #00f0ff44;padding:15px;font-size:2rem;text-align:center;letter-spacing:.5em;margin-bottom:1rem;min-height:3.5rem;border-radius:4px}
+.keypad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:240px;margin:0 auto}
+.keypad-btn{background:#111;border:1px solid #00f0ff44;color:#00f0ff;padding:14px;font-size:1.3rem;font-family:inherit;cursor:pointer;transition:all .15s;border-radius:4px}
+.keypad-btn:hover{background:#00f0ff22}
+.keypad-btn.enter{background:#00f0ff11;grid-column:span 2;font-size:1rem;letter-spacing:.1em}
+.keypad-btn.clear{background:#ff00aa11;border-color:#ff00aa44;color:#ff00aa}
+.note-content{background:#111;padding:1.5rem;border-left:3px solid #00f0ff;margin:1rem 0;line-height:2;border-radius:0 4px 4px 0}
+.note-content strong{color:#ff00aa}
+#victory-screen{z-index:200}
+#victory-screen h1{color:#00f0ff;font-size:clamp(1.5rem,4vw,2.5rem);letter-spacing:.3em}
+#victory-screen .time{font-size:3rem;margin:1rem 0;color:#fff}
+#gameover-screen{z-index:200}
+#gameover-screen h1{color:#ff0000;font-size:clamp(1.5rem,4vw,2.5rem);letter-spacing:.3em;animation:pulse .5s infinite}
+.puzzle-msg{text-align:center;margin-top:1rem;min-height:1.5rem;font-size:.9rem}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glitchText{0%,88%,100%{text-shadow:2px 0 #ff00aa,-2px 0 #00f0ff}90%{text-shadow:-5px 0 #ff00aa,5px 0 #00f0ff;transform:translate(3px,-2px)}93%{text-shadow:5px 0 #ff00aa,-5px 0 #00f0ff;transform:translate(-3px,2px)}96%{text-shadow:-2px 2px #ff00aa,2px -2px #00f0ff;transform:translate(1px,1px)}}
+@keyframes glitchScreen{0%{transform:translate(0);filter:none}20%{transform:translate(-4px,3px);filter:hue-rotate(90deg)}40%{transform:translate(4px,-3px);filter:saturate(2)}60%{transform:translate(-3px,-2px);filter:hue-rotate(-90deg)}80%{transform:translate(3px,2px);filter:brightness(1.5)}100%{transform:translate(0);filter:none}}
+.glitching{animation:glitchScreen .3s linear}
+@keyframes scanlines{0%{background-position:0 0}100%{background-position:0 100%}}
+</style>
+</head>
+<body>
+
+<div id="title-screen" class="screen">
+  <h1>VOID://ESCAPE</h1>
+  <div class="subtitle">A 3D Escape Room Experience</div>
+  <button class="start-btn" id="start-btn">&#9654; START</button>
+  <div class="instructions">Drag to look around &nbsp;|&nbsp; Click objects to interact</div>
+</div>
+
+<div id="intro-screen" class="screen hidden">
+  <p>Year 2157. Project VOID &mdash; Neural Consciousness Mapping Experiment.</p>
+  <p>You are Subject 7. The test session was designed to last 3 minutes.</p>
+  <p>It has been 47 minutes. The exit protocol has crashed.</p>
+  <p>The simulation is degrading. Reality bends around you.</p>
+  <p style="color:#ff00aa;margin-top:1rem;font-weight:bold">Find the emergency exit. You have 10 minutes.</p>
+</div>
+
+<div id="game-ui">
+  <div id="timer">10:00</div>
+  <button id="mute-btn">&#128264;</button>
+  <div id="inventory"></div>
+  <div id="notification"></div>
+  <div id="hover-label"></div>
+</div>
+
+<div id="puzzle-modal">
+  <div id="puzzle-box">
+    <button id="puzzle-close">&times;</button>
+    <div id="puzzle-content"></div>
+  </div>
+</div>
+
+<div id="victory-screen" class="screen hidden">
+  <h1>SIMULATION TERMINATED</h1>
+  <div class="subtitle" style="margin:.5rem 0">SUCCESSFULLY</div>
+  <div class="time" id="escape-time">00:00</div>
+  <div class="subtitle">Escape Time</div>
+  <button class="start-btn" id="replay-btn" style="margin-top:2rem">&#9654; PLAY AGAIN</button>
+</div>
+
+<div id="gameover-screen" class="screen hidden">
+  <h1>SIMULATION COLLAPSED</h1>
+  <div class="subtitle" style="color:#ff3333;margin:.5rem 0">SUBJECT 7 &mdash; LOST</div>
+  <button class="start-btn" id="retry-btn" style="margin-top:2rem;border-color:#ff3333;color:#ff3333">&#9654; TRY AGAIN</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+<script>
+// VOID://ESCAPE - 3D Escape Room Game
+(function(){
+"use strict";
+
+// ==================== GAME STATE ====================
+const GS = {
+  phase:'title', timer:600, interval:null,
+  inventory:[], solved:{wire:false,safe:false,cipher:false,simon:false,door:false},
+  powerOn:false, puzzleOpen:false,
+  dragging:false, dragMoved:false, downX:0, downY:0,
+  yaw:Math.PI, pitch:0, muted:false
+};
+
+// ==================== DOM REFS ====================
+const $=id=>document.getElementById(id);
+const titleScreen=$('title-screen'), introScreen=$('intro-screen');
+const gameUI=$('game-ui'), timerEl=$('timer'), inventoryEl=$('inventory');
+const notifEl=$('notification'), hoverLabel=$('hover-label');
+const puzzleModal=$('puzzle-modal'), puzzleContent=$('puzzle-content');
+const victoryScreen=$('victory-screen'), gameoverScreen=$('gameover-screen');
+
+// ==================== AUDIO ====================
+let audioCtx;
+function ensureAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
+function playTone(freq,dur,type='sine',gain=0.1){
+  if(GS.muted||!audioCtx)return;
+  try{const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.type=type;o.frequency.value=freq;g.gain.value=gain;
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+  o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur)}catch(e){}
+}
+function playClick(){playTone(440,.05)}
+function playSuccess(){playTone(523,.12,'sine',.08);setTimeout(()=>playTone(659,.12,'sine',.08),100);setTimeout(()=>playTone(784,.18,'sine',.08),200)}
+function playError(){playTone(110,.3,'square',.08)}
+function playGlitch(){
+  if(GS.muted||!audioCtx)return;
+  try{const b=audioCtx.createBuffer(1,audioCtx.sampleRate*.12,audioCtx.sampleRate);
+  const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*.08;
+  const s=audioCtx.createBufferSource();s.buffer=b;s.connect(audioCtx.destination);s.start()}catch(e){}
+}
+let ambOsc1,ambOsc2;
+function startAmbient(){
+  if(!audioCtx)return;
+  try{ambOsc1=audioCtx.createOscillator();const g1=audioCtx.createGain();
+  ambOsc1.type='sine';ambOsc1.frequency.value=55;g1.gain.value=.025;
+  ambOsc1.connect(g1);g1.connect(audioCtx.destination);ambOsc1.start();
+  ambOsc2=audioCtx.createOscillator();const g2=audioCtx.createGain();
+  ambOsc2.type='sine';ambOsc2.frequency.value=58;g2.gain.value=.018;
+  ambOsc2.connect(g2);g2.connect(audioCtx.destination);ambOsc2.start()}catch(e){}
+}
+function toggleMute(){
+  GS.muted=!GS.muted;$('mute-btn').innerHTML=GS.muted?'&#128263;':'&#128264;';
+  if(audioCtx){GS.muted?audioCtx.suspend():audioCtx.resume()}
+}
+
+// ==================== THREE.JS SETUP ====================
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x0a0a0f,.06);
+const camera=new THREE.PerspectiveCamera(65,window.innerWidth/window.innerHeight,.1,50);
+camera.position.set(0,1.6,0);
+camera.rotation.order='YXZ';
+camera.rotation.y=GS.yaw;
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=.7;
+renderer.outputEncoding=THREE.sRGBEncoding;
+document.body.prepend(renderer.domElement);
+
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+const interactives=[];
+let mouseX=0,mouseY=0;
+
+// ==================== REFERENCES ====================
+let doorMesh,termScreen,termLight,emergLight,orbMesh,windowMesh;
+
+// ==================== TEXTURES ====================
+function makeHexTex(){
+  const c=document.createElement('canvas');c.width=c.height=512;
+  const x=c.getContext('2d');x.fillStyle='#0a0a0f';x.fillRect(0,0,512,512);
+  x.strokeStyle='#00f0ff';x.lineWidth=.8;x.globalAlpha=.1;
+  const s=22,h=s*Math.sqrt(3)/2;
+  for(let r=0;r<30;r++)for(let col=0;col<25;col++){
+    const cx=col*s*1.5,cy=r*h*2+(col%2?h:0);
+    x.beginPath();
+    for(let i=0;i<6;i++){const a=Math.PI/3*i-Math.PI/6;
+      i===0?x.moveTo(cx+s*Math.cos(a),cy+s*Math.sin(a)):x.lineTo(cx+s*Math.cos(a),cy+s*Math.sin(a))}
+    x.closePath();x.stroke()}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2,2);return t;
+}
+
+function makeWallTex(){
+  const c=document.createElement('canvas');c.width=256;c.height=256;
+  const x=c.getContext('2d');x.fillStyle='#0d0d18';x.fillRect(0,0,256,256);
+  x.strokeStyle='#151520';x.lineWidth=1;
+  for(let i=0;i<256;i+=64){x.beginPath();x.moveTo(i,0);x.lineTo(i,256);x.stroke();
+    x.beginPath();x.moveTo(0,i);x.lineTo(256,i);x.stroke()}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
+}
+
+// ==================== BUILD ROOM ====================
+function buildRoom(){
+  const wt=makeWallTex();
+  // Floor
+  const fm=new THREE.MeshStandardMaterial({color:0x0a0a0f,roughness:.92,metalness:.05,map:makeHexTex()});
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(10,8),fm);
+  floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+  // Ceiling
+  const cm=new THREE.MeshStandardMaterial({color:0x080810,roughness:.9});
+  const ceil=new THREE.Mesh(new THREE.PlaneGeometry(10,8),cm);
+  ceil.position.y=4;ceil.rotation.x=Math.PI/2;scene.add(ceil);
+  // Ceiling light strips
+  for(let i=-3;i<=3;i+=3){
+    const strip=new THREE.Mesh(new THREE.BoxGeometry(.15,.02,6),
+      new THREE.MeshStandardMaterial({color:0x00f0ff,emissive:0x004455,emissiveIntensity:.3}));
+    strip.position.set(i,3.98,0);scene.add(strip);
+  }
+  // Walls
+  const wm=()=>{const m=new THREE.MeshStandardMaterial({color:0x0d0d18,roughness:.85,map:wt.clone()});return m};
+  const wallData=[
+    {p:[0,2,-4],r:[0,0,0],s:[10,4]},
+    {p:[0,2,4],r:[0,Math.PI,0],s:[10,4]},
+    {p:[5,2,0],r:[0,-Math.PI/2,0],s:[8,4]},
+    {p:[-5,2,0],r:[0,Math.PI/2,0],s:[8,4]}
+  ];
+  wallData.forEach(w=>{
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(...w.s),wm());
+    m.position.set(...w.p);m.rotation.set(...w.r);scene.add(m);
+  });
+}
+
+// ==================== BUILD OBJECTS ====================
+function addI(mesh,name,action){
+  mesh.userData={interactive:true,name,action,origE:mesh.material.emissive?mesh.material.emissive.clone():new THREE.Color(0)};
+  interactives.push(mesh);return mesh;
+}
+
+function buildObjects(){
+  const dark=c=>new THREE.MeshStandardMaterial({color:c,roughness:.7,metalness:.3});
+  const glow=(c,e,ei=.3)=>new THREE.MeshStandardMaterial({color:c,emissive:e,emissiveIntensity:ei,roughness:.6,metalness:.2});
+
+  // ===== NORTH WALL: Door =====
+  const frameMat=dark(0x1a1a2e);
+  [[-0.9,1.5,-3.96],[0.9,1.5,-3.96]].forEach(p=>{
+    const f=new THREE.Mesh(new THREE.BoxGeometry(.12,3,.08),frameMat);f.position.set(...p);scene.add(f)});
+  const topF=new THREE.Mesh(new THREE.BoxGeometry(1.92,.12,.08),frameMat);
+  topF.position.set(0,3.06,-3.96);scene.add(topF);
+  doorMesh=new THREE.Mesh(new THREE.BoxGeometry(1.68,2.94,.06),
+    new THREE.MeshStandardMaterial({color:0x12122a,metalness:.6,roughness:.4}));
+  doorMesh.position.set(0,1.5,-3.97);scene.add(doorMesh);
+  // Keypad
+  const kp=new THREE.Mesh(new THREE.BoxGeometry(.32,.42,.04),glow(0x1a1a30,0x002020,.4));
+  kp.position.set(1.3,1.5,-3.94);scene.add(kp);addI(kp,'Exit Keypad','keypad');
+  // Small screen on keypad
+  const kpScreen=new THREE.Mesh(new THREE.PlaneGeometry(.2,.1),
+    new THREE.MeshStandardMaterial({color:0x001a1a,emissive:0x003333,emissiveIntensity:.5}));
+  kpScreen.position.set(1.3,1.65,-3.919);scene.add(kpScreen);
+  // Emergency light
+  const el=new THREE.Mesh(new THREE.BoxGeometry(.5,.08,.08),
+    new THREE.MeshStandardMaterial({color:0xff0000,emissive:0xff0000,emissiveIntensity:.6}));
+  el.position.set(0,3.35,-3.95);scene.add(el);emergLight=el;
+
+  // ===== EAST WALL: Panel + Display Case =====
+  const panel=new THREE.Mesh(new THREE.BoxGeometry(.05,.8,.6),glow(0x1a1a2e,0x001818,.4));
+  panel.position.set(4.97,1.8,-1.5);scene.add(panel);addI(panel,'Electrical Panel','wire');
+  // Panel details
+  const panelLine=new THREE.Mesh(new THREE.BoxGeometry(.01,.6,.02),
+    new THREE.MeshStandardMaterial({color:0x00f0ff,emissive:0x004444,emissiveIntensity:.3}));
+  panelLine.position.set(4.98,1.8,-1.35);scene.add(panelLine);
+
+  // Glass case
+  const gc=new THREE.Mesh(new THREE.BoxGeometry(.05,.55,.45),
+    new THREE.MeshStandardMaterial({color:0x1a2a3a,transparent:true,opacity:.25,metalness:.9,roughness:.1}));
+  gc.position.set(4.97,1.5,1.5);scene.add(gc);
+  const artifact=new THREE.Mesh(new THREE.OctahedronGeometry(.12),
+    new THREE.MeshStandardMaterial({color:0x00f0ff,emissive:0x005566,emissiveIntensity:.5,metalness:.8}));
+  artifact.position.set(4.85,1.5,1.5);scene.add(artifact);
+  // Store for animation
+  artifact.userData.spin=true;
+
+  // ===== SOUTH WALL: Desk + Terminal + Note + Window =====
+  // Desk
+  const deskMat=dark(0x1a1a28);
+  const deskTop=new THREE.Mesh(new THREE.BoxGeometry(2.8,.07,1),deskMat);
+  deskTop.position.set(0,.88,3.4);scene.add(deskTop);
+  [[-1.25,.44,3],[1.25,.44,3],[-1.25,.44,3.8],[1.25,.44,3.8]].forEach(p=>{
+    const leg=new THREE.Mesh(new THREE.BoxGeometry(.06,.88,.06),dark(0x151525));
+    leg.position.set(...p);scene.add(leg)});
+  // Terminal
+  termScreen=new THREE.Mesh(new THREE.BoxGeometry(.9,.55,.03),
+    new THREE.MeshStandardMaterial({color:0x111111,emissive:0x000000,emissiveIntensity:0}));
+  termScreen.position.set(0,1.22,3.2);termScreen.rotation.x=-.2;
+  scene.add(termScreen);addI(termScreen,'Terminal','cipher');
+  // Terminal base
+  const tBase=new THREE.Mesh(new THREE.BoxGeometry(.3,.04,.15),dark(0x151525));
+  tBase.position.set(0,.92,3.2);scene.add(tBase);
+  // Note
+  const note=new THREE.Mesh(new THREE.BoxGeometry(.2,.008,.14),
+    glow(0x999977,0x222210,.3));
+  note.position.set(.95,.93,3.35);scene.add(note);addI(note,'Note','note');
+  // Chair
+  const chairSeat=new THREE.Mesh(new THREE.BoxGeometry(.5,.04,.5),dark(0x1a1a28));
+  chairSeat.position.set(0,.55,2.6);scene.add(chairSeat);
+  const chairBack=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.04),dark(0x1a1a28));
+  chairBack.position.set(0,.8,2.35);scene.add(chairBack);
+  // Window
+  windowMesh=new THREE.Mesh(new THREE.PlaneGeometry(3.5,2.2),
+    new THREE.MeshStandardMaterial({color:0x0a0520,emissive:0x1a0535,emissiveIntensity:.4,side:THREE.DoubleSide}));
+  windowMesh.position.set(-1.5,2.3,3.98);windowMesh.rotation.y=Math.PI;scene.add(windowMesh);
+  // Window frame
+  const wfm=dark(0x111120);
+  [[-3.3,2.3,3.97],[.3,2.3,3.97]].forEach((p,i)=>{
+    const f=new THREE.Mesh(new THREE.BoxGeometry(.06,2.3,.04),wfm);f.position.set(p[0],p[1],p[2]);scene.add(f)});
+  [[-.15,3.45,3.97],[-.15,1.15,3.97]].forEach(p=>{
+    const f=new THREE.Mesh(new THREE.BoxGeometry(3.6,.06,.04),wfm);f.position.set(p[0]-.35,p[1],p[2]);scene.add(f)});
+
+  // ===== WEST WALL: Bookshelf + Mirror + Safe =====
+  // Bookshelf
+  const shelfMat=dark(0x1a1822);
+  const shelf=new THREE.Mesh(new THREE.BoxGeometry(.08,2.6,1.4),shelfMat);
+  shelf.position.set(-4.96,1.5,-1.8);scene.add(shelf);
+  // Shelf boards
+  for(let y=.5;y<=2.8;y+=.6){
+    const board=new THREE.Mesh(new THREE.BoxGeometry(.35,.04,1.3),shelfMat);
+    board.position.set(-4.8,y,-1.8);scene.add(board)}
+  // Books
+  const bColors=[0x882233,0x338833,0x223388,0x888833,0x883388,0x338888];
+  bColors.forEach((c,i)=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(.12,.25+Math.random()*.1,.18),dark(c));
+    b.position.set(-4.72,.7+Math.floor(i/3)*.6,-2.1+i*.18);scene.add(b)});
+  // Tablet
+  const tablet=new THREE.Mesh(new THREE.BoxGeometry(.15,.22,.02),glow(0x1a2a3a,0x002020,.5));
+  tablet.position.set(-4.72,1.92,-1.65);scene.add(tablet);addI(tablet,'Data Tablet','tablet');
+  // Mirror
+  const mirror=new THREE.Mesh(new THREE.PlaneGeometry(.9,1.3),
+    new THREE.MeshStandardMaterial({color:0x0a0a1a,metalness:.95,roughness:.05,emissive:0x050515,emissiveIntensity:.2}));
+  mirror.position.set(-4.98,1.8,.5);mirror.rotation.y=Math.PI/2;scene.add(mirror);
+  addI(mirror,'Mirror','mirror');
+  // Mirror frame
+  const mfm=dark(0x1a1a2e);
+  [[-4.97,1.8,-.01],[-4.97,1.8,1.01]].forEach(p=>{
+    const f=new THREE.Mesh(new THREE.BoxGeometry(.04,1.35,.04),mfm);f.position.set(...p);scene.add(f)});
+  [[-4.97,2.48,.5],[-4.97,1.12,.5]].forEach(p=>{
+    const f=new THREE.Mesh(new THREE.BoxGeometry(.04,.04,.98),mfm);f.position.set(...p);scene.add(f)});
+  // Safe
+  const safe=new THREE.Mesh(new THREE.BoxGeometry(.38,.32,.32),glow(0x1a1a2e,0x001515,.4));
+  safe.position.set(-4.78,.5,2.2);scene.add(safe);addI(safe,'Wall Safe','safe');
+  // Safe dial
+  const dial=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.02,16),
+    new THREE.MeshStandardMaterial({color:0x333344,metalness:.8}));
+  dial.position.set(-4.58,.5,2.2);dial.rotation.z=Math.PI/2;scene.add(dial);
+
+  // ===== CENTER: Pedestal + Orb =====
+  const ped=new THREE.Mesh(new THREE.CylinderGeometry(.22,.28,.9,8),
+    new THREE.MeshStandardMaterial({color:0x15152a,metalness:.5,roughness:.5}));
+  ped.position.set(0,.45,0);scene.add(ped);
+  orbMesh=new THREE.Mesh(new THREE.SphereGeometry(.22,32,32),
+    new THREE.MeshStandardMaterial({color:0x00d4ff,emissive:0x006688,emissiveIntensity:.6,metalness:.2,roughness:.2}));
+  orbMesh.position.set(0,1.15,0);scene.add(orbMesh);addI(orbMesh,'VOID Core','simon');
+  // Orb inner glow ring
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.28,.015,8,32),
+    new THREE.MeshStandardMaterial({color:0x00f0ff,emissive:0x00aacc,emissiveIntensity:.8,transparent:true,opacity:.5}));
+  ring.position.set(0,1.15,0);ring.rotation.x=Math.PI/2;scene.add(ring);
+}
+
+// ==================== LIGHTING ====================
+function buildLights(){
+  scene.add(new THREE.AmbientLight(0x111122,.35));
+  // Orb cyan
+  const orbL=new THREE.PointLight(0x00f0ff,.7,8);orbL.position.set(0,1.5,0);scene.add(orbL);
+  // Window magenta
+  const winL=new THREE.PointLight(0xff00aa,.35,7);winL.position.set(-2,2.2,3.5);scene.add(winL);
+  // Emergency red
+  const redL=new THREE.PointLight(0xff0000,.25,5);redL.position.set(0,3.3,-3.5);scene.add(redL);
+  // Terminal (off initially)
+  termLight=new THREE.PointLight(0x00ff88,0,3);termLight.position.set(0,1.4,3.2);scene.add(termLight);
+  // Ceiling fills
+  [-3,0,3].forEach(x=>{
+    const l=new THREE.PointLight(0x00f0ff,.08,6);l.position.set(x,3.9,0);scene.add(l)});
+}
+
+// ==================== PARTICLES ====================
+let particles;
+function buildParticles(){
+  const n=150,geo=new THREE.BufferGeometry();
+  const pos=new Float32Array(n*3);
+  for(let i=0;i<n*3;i+=3){pos[i]=(Math.random()-.5)*9;pos[i+1]=Math.random()*3.7+.1;pos[i+2]=(Math.random()-.5)*7}
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  particles=new THREE.Points(geo,new THREE.PointsMaterial({color:0x00f0ff,size:.02,transparent:true,opacity:.35}));
+  scene.add(particles);
+}
+
+// ==================== UI HELPERS ====================
+function showNotif(text){
+  notifEl.textContent=text;notifEl.style.opacity=1;
+  setTimeout(()=>{notifEl.style.opacity=0},3000);
+}
+function updateInvUI(){
+  inventoryEl.innerHTML='';
+  const names={decryption_key:'🔑 Decryption Key',keycard:'💳 Hexagonal Keycard'};
+  GS.inventory.forEach(it=>{const d=document.createElement('div');d.className='inv-item';d.textContent=names[it]||it;inventoryEl.appendChild(d)});
+}
+function updateTimerUI(){
+  GS.timer--;
+  if(GS.timer<=0){GS.timer=0;doGameOver();return}
+  const m=Math.floor(GS.timer/60),s=GS.timer%60;
+  timerEl.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  timerEl.className=GS.timer<60?'critical':GS.timer<120?'warning':'';
+}
+
+// ==================== INTERACTION ====================
+let hoveredObj=null;
+function updateHover(){
+  if(GS.phase!=='playing'||GS.puzzleOpen){
+    if(hoveredObj){hoveredObj.material.emissive.copy(hoveredObj.userData.origE);hoveredObj=null}
+    hoverLabel.style.display='none';renderer.domElement.style.cursor='default';return;
+  }
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(interactives);
+  if(hits.length>0&&hits[0].distance<8){
+    const obj=hits[0].object;
+    if(hoveredObj!==obj){
+      if(hoveredObj)hoveredObj.material.emissive.copy(hoveredObj.userData.origE);
+      hoveredObj=obj;obj.material.emissive.set(0x004444);
+    }
+    renderer.domElement.style.cursor='pointer';
+    hoverLabel.style.display='block';hoverLabel.textContent=obj.userData.name;
+    hoverLabel.style.left=Math.min(mouseX+15,window.innerWidth-150)+'px';
+    hoverLabel.style.top=(mouseY-15)+'px';
+  }else{
+    if(hoveredObj){hoveredObj.material.emissive.copy(hoveredObj.userData.origE);hoveredObj=null}
+    hoverLabel.style.display='none';renderer.domElement.style.cursor='grab';
+  }
+}
+function handleClick(){
+  if(GS.phase!=='playing'||GS.puzzleOpen)return;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(interactives);
+  if(hits.length>0&&hits[0].distance<8){playClick();doAction(hits[0].object.userData.action)}
+}
+function doAction(action){
+  switch(action){
+    case'wire':openPuzzle('wire');break;
+    case'mirror':openPuzzle('mirror');break;
+    case'tablet':openPuzzle('tablet');break;
+    case'safe':openPuzzle('safe');break;
+    case'cipher':
+      if(!GS.powerOn){showNotif('⚠ Terminal offline. Restore power first.');return}
+      if(!GS.inventory.includes('decryption_key')){showNotif('🔒 DECRYPTION KEY REQUIRED');return}
+      openPuzzle('cipher');break;
+    case'simon':
+      if(!GS.solved.cipher){showNotif('⚠ Core dormant. Decrypt activation sequence first.');return}
+      openPuzzle('simon');break;
+    case'keypad':
+      if(!GS.inventory.includes('keycard')){showNotif('🔒 KEYCARD REQUIRED');return}
+      openPuzzle('keypad');break;
+    case'note':openPuzzle('note');break;
+  }
+}
+
+// ==================== PUZZLE FRAMEWORK ====================
+function openPuzzle(type){
+  GS.puzzleOpen=true;puzzleModal.classList.add('active');puzzleContent.innerHTML='';
+  switch(type){
+    case'wire':pzWire();break;case'mirror':pzMirror();break;case'tablet':pzTablet();break;
+    case'safe':pzSafe();break;case'cipher':pzCipher();break;case'simon':pzSimon();break;
+    case'keypad':pzKeypad();break;case'note':pzNote();break;
+  }
+}
+function closePuzzle(){GS.puzzleOpen=false;puzzleModal.classList.remove('active');puzzleContent.innerHTML=''}
+
+// ========== PUZZLE 1: WIRE ==========
+function pzWire(){
+  const el=puzzleContent;
+  if(GS.solved.wire){el.innerHTML='<div class="puzzle-title">⚡ ELECTRICAL PANEL</div><p style="text-align:center;color:#0f6;margin:2rem 0">POWER RESTORED — All systems nominal.</p>';return}
+  const rightOrder=['green','yellow','red','blue'];
+  const colorHex={red:'#ff3344',blue:'#3366ff',green:'#33cc55',yellow:'#cccc33'};
+  const colors=['red','blue','green','yellow'];
+  let sel=null,connected={},count=0;
+  el.innerHTML='<div class="puzzle-title">⚡ ELECTRICAL PANEL</div><div class="puzzle-desc">Connect matching color terminals to restore power</div><div class="wire-container"><div class="wire-side" id="wl"></div><div class="wire-mid">---</div><div class="wire-side" id="wr"></div></div>';
+  const wl=$('wl'),wr=$('wr');
+  colors.forEach(c=>{
+    const t=document.createElement('div');t.className='wire-terminal';
+    t.style.background=colorHex[c];t.style.color='#000';t.dataset.color=c;t.dataset.side='left';
+    t.onclick=function(){selectT(c,'left',this)};wl.appendChild(t);
+  });
+  rightOrder.forEach(c=>{
+    const t=document.createElement('div');t.className='wire-terminal';
+    t.style.background=colorHex[c];t.style.color='#000';t.dataset.color=c;t.dataset.side='right';
+    t.onclick=function(){selectT(c,'right',this)};wr.appendChild(t);
+  });
+  function selectT(color,side,elem){
+    if(connected[color])return;
+    if(!sel){
+      if(side!=='left')return;sel={color,elem};elem.classList.add('selected');playClick();
+    }else{
+      if(side!=='right'){sel.elem.classList.remove('selected');sel=null;return}
+      if(sel.color===color){
+        connected[color]=true;count++;
+        sel.elem.classList.remove('selected');sel.elem.classList.add('done');elem.classList.add('done');
+        sel=null;playSuccess();
+        if(count===4)setTimeout(()=>{
+          GS.solved.wire=true;GS.powerOn=true;
+          termScreen.material.emissive.set(0x003311);termScreen.material.emissiveIntensity=.4;
+          termLight.intensity=.4;
+          showNotif('⚡ POWER RESTORED — Terminal online');closePuzzle();
+        },400);
+      }else{
+        playError();sel.elem.classList.remove('selected');sel=null;
+        el.querySelector('.wire-container').style.boxShadow='inset 0 0 30px #ff000044';
+        setTimeout(()=>{const wc=el.querySelector('.wire-container');if(wc)wc.style.boxShadow='none'},300);
+      }
+    }
+  }
+}
+
+// ========== PUZZLE 2A: MIRROR ==========
+function pzMirror(){
+  puzzleContent.innerHTML=`<div class="puzzle-title">🪞 MIRROR</div>
+    <div class="puzzle-desc">Strange symbols float in the dark reflection...</div>
+    <div class="symbol-display">
+      <span style="animation-delay:0s">△</span><span style="animation-delay:.3s">○</span>
+      <span style="animation-delay:.6s">□</span><span style="animation-delay:.9s">⬡</span>
+    </div><p style="text-align:center;color:#444;font-size:.8rem;margin-top:1.5rem">These symbols must correspond to something...</p>`;
+}
+
+// ========== PUZZLE 2B: TABLET ==========
+function pzTablet(){
+  puzzleContent.innerHTML=`<div class="puzzle-title">📱 VOID SYMBOL REFERENCE</div>
+    <div class="puzzle-desc">Official Symbol-to-Number Mapping</div>
+    <div class="symbol-ref">
+      <div class="symbol-ref-item"><span class="sym">△</span><span>=</span><span class="num">7</span></div>
+      <div class="symbol-ref-item"><span class="sym">○</span><span>=</span><span class="num">3</span></div>
+      <div class="symbol-ref-item"><span class="sym">□</span><span>=</span><span class="num">9</span></div>
+      <div class="symbol-ref-item"><span class="sym">⬡</span><span>=</span><span class="num">1</span></div>
+    </div><p style="text-align:center;color:#444;font-size:.8rem;margin-top:1rem">Project VOID — Classification: RESTRICTED</p>`;
+}
+
+// ========== PUZZLE 2C: SAFE ==========
+function pzSafe(){
+  const el=puzzleContent;
+  if(GS.solved.safe){el.innerHTML='<div class="puzzle-title">🔓 SAFE OPENED</div><p style="text-align:center;color:#666;margin:2rem 0">The safe is empty.</p>';return}
+  el.innerHTML='<div class="puzzle-title">🔒 WALL SAFE</div><div class="puzzle-desc">Enter 4-digit combination</div><div class="safe-digits" id="sd"></div><button class="puzzle-btn" id="safe-go">UNLOCK</button><div class="puzzle-msg" id="safe-msg"></div>';
+  const sd=$('sd');const vals=[0,0,0,0];
+  for(let i=0;i<4;i++){
+    const d=document.createElement('div');d.className='safe-digit';
+    const up=document.createElement('button');up.textContent='▲';
+    const v=document.createElement('div');v.className='val';v.textContent='0';
+    const dn=document.createElement('button');dn.textContent='▼';
+    up.onclick=()=>{vals[i]=(vals[i]+1)%10;v.textContent=vals[i];playClick()};
+    dn.onclick=()=>{vals[i]=(vals[i]+9)%10;v.textContent=vals[i];playClick()};
+    d.appendChild(up);d.appendChild(v);d.appendChild(dn);sd.appendChild(d);
+  }
+  $('safe-go').onclick=()=>{
+    const code=vals.join('');
+    if(code==='7391'){
+      GS.solved.safe=true;GS.inventory.push('decryption_key');updateInvUI();
+      playSuccess();showNotif('🔑 DECRYPTION KEY acquired!');closePuzzle();
+    }else{
+      playError();const msg=$('safe-msg');if(msg){msg.textContent='❌ ACCESS DENIED';msg.style.color='#ff3333';
+      setTimeout(()=>{if(msg)msg.textContent=''},1500)}
+    }
+  };
+}
+
+// ========== PUZZLE 3: CIPHER ==========
+function pzCipher(){
+  const el=puzzleContent;
+  if(GS.solved.cipher){
+    el.innerHTML=`<div class="puzzle-title">💻 TERMINAL</div><div class="terminal-screen">
+      <div class="prompt">&gt; DECRYPTION COMPLETE</div>
+      <div class="data">&gt; THE CORE AWAITS: BLUE RED GREEN BLUE RED</div>
+      <div class="data">&gt; PARTIAL EXIT CODE RECOVERED: 82____</div></div>`;return}
+  const enc="GUR PBER NJNVGF: OYHR ERQ TERRA OYHR ERQ";
+  el.innerHTML=`<div class="puzzle-title">💻 TERMINAL</div><div class="terminal-screen">
+    <div class="prompt">&gt; ENCRYPTED TRANSMISSION RECOVERED:</div>
+    <div class="data" id="ct">"${enc}"</div><br>
+    <div class="prompt">&gt; CAESAR CIPHER DETECTED. APPLY SHIFT TO DECRYPT.</div><br>
+    <div class="cipher-shift-label">SHIFT: <span id="sv">0</span></div>
+    <input type="range" class="cipher-slider" id="cs" min="0" max="25" value="0">
+    <div class="prompt" id="cr" style="display:none;margin-top:.8rem">&gt; PARTIAL EXIT CODE RECOVERED: 82____</div>
+  </div><button class="puzzle-btn" id="cc" style="display:none;margin-top:1rem">CONFIRM DECRYPTION</button>`;
+  $('cs').oninput=function(){
+    const s=parseInt(this.value);$('sv').textContent=s;
+    $('ct').textContent='"'+caesarShift(enc,s)+'"';
+    const show=s===13;$('cr').style.display=show?'block':'none';$('cc').style.display=show?'block':'none';
+  };
+  $('cc').onclick=()=>{
+    GS.solved.cipher=true;playSuccess();
+    showNotif('💻 Sequence: BLUE RED GREEN BLUE RED | Code fragment: 82');closePuzzle();
+  };
+}
+function caesarShift(t,s){
+  return t.split('').map(c=>{
+    if(c>='A'&&c<='Z')return String.fromCharCode(((c.charCodeAt(0)-65+s)%26)+65);return c;
+  }).join('');
+}
+
+// ========== PUZZLE 4: SIMON SAYS ==========
+function pzSimon(){
+  const el=puzzleContent;
+  if(GS.solved.simon){el.innerHTML='<div class="puzzle-title">🔮 VOID CORE</div><p style="text-align:center;color:#0f6;margin:2rem 0">Core activated. SEQUENCE: 31</p>';return}
+  const seqs=[rndColors(3),rndColors(4),['blue','red','green','blue','red']];
+  let round=0,playerIn=[],canInput=false;
+  const tones={blue:261.6,red:329.6,green:392,yellow:493.9};
+  el.innerHTML=`<div class="puzzle-title">🔮 VOID CORE — Simon Sequence</div>
+    <div class="puzzle-desc">Watch the pattern, then repeat it</div>
+    <div class="simon-container"><div class="simon-board" id="sb">
+      <div class="simon-quad blue" data-c="blue"></div>
+      <div class="simon-quad red" data-c="red"></div>
+      <div class="simon-quad green" data-c="green"></div>
+      <div class="simon-quad yellow" data-c="yellow"></div>
+    </div><div class="simon-status" id="ss">Round 1 / 3 — Watch...</div></div>`;
+  const quads=el.querySelectorAll('.simon-quad');
+  quads.forEach(q=>{q.onclick=()=>{
+    if(!canInput)return;const c=q.dataset.c;
+    flash(q,200);playTone(tones[c],.2,'sine',.1);playerIn.push(c);
+    const idx=playerIn.length-1;
+    if(playerIn[idx]!==seqs[round][idx]){
+      playError();playerIn=[];canInput=false;
+      const ss=$('ss');if(ss)ss.textContent='❌ SEQUENCE ERROR — Restarting...';
+      setTimeout(()=>playSeq(),1200);return;
+    }
+    if(playerIn.length===seqs[round].length){
+      canInput=false;playerIn=[];playSuccess();round++;
+      if(round>=3){
+        const ss=$('ss');if(ss)ss.textContent='✅ CORE ACTIVATED';
+        setTimeout(()=>{
+          GS.solved.simon=true;GS.inventory.push('keycard');updateInvUI();
+          showNotif('🔮 CORE ACTIVATED — SEQUENCE: 31 — 💳 KEYCARD acquired!');closePuzzle();
+        },1500);
+      }else{
+        const ss=$('ss');if(ss)ss.textContent=`Round ${round+1} / 3 — Watch...`;
+        setTimeout(()=>playSeq(),800);
+      }
+    }
+  }});
+  function flash(q,dur){q.classList.add('flash');setTimeout(()=>q.classList.remove('flash'),dur)}
+  function playSeq(){
+    canInput=false;const seq=seqs[round];
+    const ss=$('ss');if(ss)ss.textContent=`Round ${round+1} / 3 — Watch...`;
+    seq.forEach((c,i)=>{setTimeout(()=>{
+      const q=el.querySelector(`.simon-quad.${c}`);if(q)flash(q,500);
+      playTone(tones[c],.3,'sine',.1);
+    },i*750)});
+    setTimeout(()=>{canInput=true;const ss=$('ss');if(ss)ss.textContent=`Round ${round+1} / 3 — Your turn!`},seq.length*750+400);
+  }
+  setTimeout(()=>playSeq(),600);
+}
+function rndColors(n){const c=['blue','red','green','yellow'];return Array.from({length:n},()=>c[Math.floor(Math.random()*4)])}
+
+// ========== PUZZLE 5: KEYPAD ==========
+function pzKeypad(){
+  const el=puzzleContent;let input='';
+  el.innerHTML=`<div class="puzzle-title">🚪 EXIT KEYPAD</div><div class="puzzle-desc">Enter 6-digit exit code</div>
+    <div class="keypad-display" id="kd">______</div>
+    <div class="keypad-grid" id="kg"></div><div class="puzzle-msg" id="km"></div>`;
+  const kg=$('kg');
+  for(let i=1;i<=9;i++)addKB(String(i),()=>addD(i));
+  addKB('CLR',()=>{input='';updD()},true);
+  addKB('0',()=>addD(0));
+  addKB('ENTER',()=>chk(),false,true);
+  function addKB(label,fn,isClear,isEnter){
+    const b=document.createElement('button');b.className='keypad-btn'+(isClear?' clear':'')+(isEnter?' enter':'');
+    b.textContent=label;b.onclick=fn;kg.appendChild(b);
+  }
+  function addD(d){if(input.length>=6)return;input+=d;playClick();updD()}
+  function updD(){const kd=$('kd');if(kd)kd.textContent=input.padEnd(6,'_')}
+  function chk(){
+    if(input==='820731'){GS.solved.door=true;playSuccess();closePuzzle();doVictory()}
+    else{
+      playError();const km=$('km');
+      if(km){km.textContent='❌ INVALID CODE';km.style.color='#ff3333'}
+      input='';updD();setTimeout(()=>{const km=$('km');if(km)km.textContent=''},1500);
+    }
+  }
+}
+
+// ========== NOTE ==========
+function pzNote(){
+  puzzleContent.innerHTML=`<div class="puzzle-title">📄 PROJECT NOTE</div>
+    <div class="note-content">
+      <p>VOID Project — Classified Document</p><br>
+      <p>Session Phase: <strong>07</strong></p>
+      <p>Subject: 7</p>
+      <p>Status: <span style="color:#ff3333">CRITICAL</span></p><br>
+      <p style="color:#444;font-size:.8rem">WARNING: Emergency exit protocol compromised.<br>
+      All override codes have been fragmented across subsystems.</p>
+    </div>`;
+}
+
+// ==================== GAME FLOW ====================
+function startIntro(){
+  ensureAudio();titleScreen.classList.add('hidden');introScreen.classList.remove('hidden');
+  const ps=introScreen.querySelectorAll('p');
+  ps.forEach((p,i)=>setTimeout(()=>p.classList.add('visible'),i*700+300));
+  setTimeout(()=>{introScreen.style.cursor='pointer'},ps.length*700+500);
+}
+function startGame(){
+  introScreen.classList.add('hidden');gameUI.style.display='block';GS.phase='playing';
+  GS.interval=setInterval(updateTimerUI,1000);startAmbient();scheduleGlitch();
+}
+function doVictory(){
+  GS.phase='victory';clearInterval(GS.interval);
+  // Animate door
+  const anim=setInterval(()=>{
+    if(doorMesh.position.y<5){doorMesh.position.y+=.06}else clearInterval(anim)
+  },16);
+  const flash=new THREE.PointLight(0xffffff,3,20);flash.position.set(0,2,-5);scene.add(flash);
+  const grow=setInterval(()=>{
+    if(flash.intensity<10)flash.intensity+=.15;else clearInterval(grow)
+  },16);
+  setTimeout(()=>{
+    gameUI.style.display='none';
+    const elapsed=600-GS.timer,m=Math.floor(elapsed/60),s=elapsed%60;
+    $('escape-time').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    victoryScreen.classList.remove('hidden');
+  },2500);
+}
+function doGameOver(){
+  GS.phase='gameover';clearInterval(GS.interval);
+  document.body.classList.add('glitching');playGlitch();
+  setTimeout(()=>{
+    gameUI.style.display='none';gameoverScreen.classList.remove('hidden');
+    document.body.classList.remove('glitching');
+  },1500);
+}
+
+// ==================== GLITCH ====================
+function scheduleGlitch(){
+  if(GS.phase!=='playing')return;
+  const delay=12000+Math.random()*18000;
+  setTimeout(()=>{
+    if(GS.phase!=='playing')return;
+    document.body.classList.add('glitching');playGlitch();
+    setTimeout(()=>document.body.classList.remove('glitching'),300);
+    scheduleGlitch();
+  },delay);
+}
+
+// ==================== ANIMATION LOOP ====================
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const t=clock.getElapsedTime();
+  // Particles drift
+  if(particles){
+    const p=particles.geometry.attributes.position.array;
+    for(let i=0;i<p.length;i+=3){p[i+1]+=Math.sin(t*.5+i)*.0004;
+      if(p[i+1]>3.7)p[i+1]=.2;if(p[i+1]<.1)p[i+1]=3.6}
+    particles.geometry.attributes.position.needsUpdate=true;
+  }
+  // Orb pulse
+  if(orbMesh)orbMesh.material.emissiveIntensity=.5+Math.sin(t*2)*.25;
+  // Emergency light flicker
+  if(emergLight)emergLight.material.emissiveIntensity=.4+Math.sin(t*4)*.3+Math.random()*.1;
+  // Window nebula
+  if(windowMesh)windowMesh.material.emissive.setHSL(.78+Math.sin(t*.2)*.08,.6,.12);
+  // Artifact spin
+  scene.traverse(o=>{if(o.userData&&o.userData.spin){o.rotation.y=t*.5;o.rotation.x=Math.sin(t)*.3}});
+  // Hover
+  updateHover();
+  renderer.render(scene,camera);
+}
+
+// ==================== EVENTS ====================
+window.addEventListener('mousemove',e=>{
+  mouseX=e.clientX;mouseY=e.clientY;
+  mouse.x=(e.clientX/window.innerWidth)*2-1;
+  mouse.y=-(e.clientY/window.innerHeight)*2+1;
+  if(GS.dragging&&GS.phase==='playing'&&!GS.puzzleOpen){
+    const dx=e.clientX-GS.downX,dy=e.clientY-GS.downY;
+    if(Math.abs(e.movementX)>0||Math.abs(e.movementY)>0)GS.dragMoved=true;
+    GS.yaw-=e.movementX*.003;GS.pitch-=e.movementY*.003;
+    GS.pitch=Math.max(-.7,Math.min(.4,GS.pitch));
+    camera.rotation.y=GS.yaw;camera.rotation.x=GS.pitch;
+  }
+});
+window.addEventListener('mousedown',e=>{
+  if(e.button===0){GS.dragging=true;GS.dragMoved=false;GS.downX=e.clientX;GS.downY=e.clientY}
+});
+window.addEventListener('mouseup',e=>{
+  if(e.button===0){
+    const wasDrag=GS.dragMoved;GS.dragging=false;
+    if(!wasDrag)handleClick();
+  }
+});
+// Touch support
+let touchStartX=0,touchStartY=0,touchMoved=false;
+window.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){const t=e.touches[0];touchStartX=t.clientX;touchStartY=t.clientY;touchMoved=false;
+    mouse.x=(t.clientX/window.innerWidth)*2-1;mouse.y=-(t.clientY/window.innerHeight)*2+1;
+    GS.dragging=true;GS.downX=t.clientX;GS.downY=t.clientY}
+},{passive:true});
+window.addEventListener('touchmove',e=>{
+  if(e.touches.length===1&&GS.phase==='playing'&&!GS.puzzleOpen){
+    const t=e.touches[0];const mx=t.clientX-GS.downX,my=t.clientY-GS.downY;
+    if(Math.abs(mx)>3||Math.abs(my)>3)touchMoved=true;
+    GS.yaw-=(t.clientX-GS.downX)*.004;GS.pitch-=(t.clientY-GS.downY)*.004;
+    GS.pitch=Math.max(-.7,Math.min(.4,GS.pitch));
+    camera.rotation.y=GS.yaw;camera.rotation.x=GS.pitch;
+    GS.downX=t.clientX;GS.downY=t.clientY;
+    mouse.x=(t.clientX/window.innerWidth)*2-1;mouse.y=-(t.clientY/window.innerHeight)*2+1;
+  }
+},{passive:true});
+window.addEventListener('touchend',e=>{
+  GS.dragging=false;if(!touchMoved)handleClick();
+});
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+$('puzzle-close').onclick=closePuzzle;
+$('start-btn').onclick=startIntro;
+$('mute-btn').onclick=toggleMute;
+$('replay-btn').onclick=()=>location.reload();
+$('retry-btn').onclick=()=>location.reload();
+introScreen.onclick=function(){if(GS.phase==='title'){GS.phase='intro';startGame()}};
+
+// ==================== INIT ====================
+buildRoom();buildObjects();buildLights();buildParticles();
+animate();
+
+})();
+</script>
+</body>
+</html>
