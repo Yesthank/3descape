@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -99,17 +99,17 @@ canvas{display:block;position:fixed;top:0;left:0;z-index:0}
 
 <div id="title-screen" class="screen">
   <h1>VOID://ESCAPE</h1>
-  <div class="subtitle">A 3D Escape Room Experience</div>
-  <button class="start-btn" id="start-btn">&#9654; START</button>
-  <div class="instructions">Drag to look around &nbsp;|&nbsp; Click objects to interact</div>
+  <div class="subtitle">3D 방탈출 체험</div>
+  <button class="start-btn" id="start-btn">&#9654; 시작</button>
+  <div class="instructions">드래그하여 둘러보기 &nbsp;|&nbsp; 오브젝트를 클릭하여 상호작용</div>
 </div>
 
 <div id="intro-screen" class="screen hidden">
-  <p>Year 2157. Project VOID &mdash; Neural Consciousness Mapping Experiment.</p>
-  <p>You are Subject 7. The test session was designed to last 3 minutes.</p>
-  <p>It has been 47 minutes. The exit protocol has crashed.</p>
-  <p>The simulation is degrading. Reality bends around you.</p>
-  <p style="color:#ff00aa;margin-top:1rem;font-weight:bold">Find the emergency exit. You have 10 minutes.</p>
+  <p>2157년. 프로젝트 VOID &mdash; 신경 의식 매핑 실험.</p>
+  <p>당신은 피험자 7번. 실험 세션은 3분으로 설계되었다.</p>
+  <p>이미 47분이 경과했다. 탈출 프로토콜이 충돌했다.</p>
+  <p>시뮬레이션이 붕괴 중이다. 현실이 왜곡되고 있다.</p>
+  <p style="color:#ff00aa;margin-top:1rem;font-weight:bold">비상 탈출구를 찾아라. 제한시간 10분.</p>
 </div>
 
 <div id="game-ui">
@@ -128,17 +128,17 @@ canvas{display:block;position:fixed;top:0;left:0;z-index:0}
 </div>
 
 <div id="victory-screen" class="screen hidden">
-  <h1>SIMULATION TERMINATED</h1>
-  <div class="subtitle" style="margin:.5rem 0">SUCCESSFULLY</div>
+  <h1>시뮬레이션 종료</h1>
+  <div class="subtitle" style="margin:.5rem 0">탈출 성공</div>
   <div class="time" id="escape-time">00:00</div>
-  <div class="subtitle">Escape Time</div>
-  <button class="start-btn" id="replay-btn" style="margin-top:2rem">&#9654; PLAY AGAIN</button>
+  <div class="subtitle">탈출 시간</div>
+  <button class="start-btn" id="replay-btn" style="margin-top:2rem">&#9654; 다시 하기</button>
 </div>
 
 <div id="gameover-screen" class="screen hidden">
-  <h1>SIMULATION COLLAPSED</h1>
-  <div class="subtitle" style="color:#ff3333;margin:.5rem 0">SUBJECT 7 &mdash; LOST</div>
-  <button class="start-btn" id="retry-btn" style="margin-top:2rem;border-color:#ff3333;color:#ff3333">&#9654; TRY AGAIN</button>
+  <h1>시뮬레이션 붕괴</h1>
+  <div class="subtitle" style="color:#ff3333;margin:.5rem 0">피험자 7번 &mdash; 소실</div>
+  <button class="start-btn" id="retry-btn" style="margin-top:2rem;border-color:#ff3333;color:#ff3333">&#9654; 재시도</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
@@ -297,7 +297,7 @@ function buildObjects(){
   doorMesh.position.set(0,1.5,-3.97);scene.add(doorMesh);
   // Keypad
   const kp=new THREE.Mesh(new THREE.BoxGeometry(.32,.42,.04),glow(0x1a1a30,0x002020,.4));
-  kp.position.set(1.3,1.5,-3.94);scene.add(kp);addI(kp,'Exit Keypad','keypad');
+  kp.position.set(1.3,1.5,-3.94);scene.add(kp);addI(kp,'탈출 키패드','keypad');
   // Small screen on keypad
   const kpScreen=new THREE.Mesh(new THREE.PlaneGeometry(.2,.1),
     new THREE.MeshStandardMaterial({color:0x001a1a,emissive:0x003333,emissiveIntensity:.5}));
@@ -309,7 +309,7 @@ function buildObjects(){
 
   // ===== EAST WALL: Panel + Display Case =====
   const panel=new THREE.Mesh(new THREE.BoxGeometry(.05,.8,.6),glow(0x1a1a2e,0x001818,.4));
-  panel.position.set(4.97,1.8,-1.5);scene.add(panel);addI(panel,'Electrical Panel','wire');
+  panel.position.set(4.97,1.8,-1.5);scene.add(panel);addI(panel,'전기 패널','wire');
   // Panel details
   const panelLine=new THREE.Mesh(new THREE.BoxGeometry(.01,.6,.02),
     new THREE.MeshStandardMaterial({color:0x00f0ff,emissive:0x004444,emissiveIntensity:.3}));
@@ -337,14 +337,14 @@ function buildObjects(){
   termScreen=new THREE.Mesh(new THREE.BoxGeometry(.9,.55,.03),
     new THREE.MeshStandardMaterial({color:0x111111,emissive:0x000000,emissiveIntensity:0}));
   termScreen.position.set(0,1.22,3.2);termScreen.rotation.x=-.2;
-  scene.add(termScreen);addI(termScreen,'Terminal','cipher');
+  scene.add(termScreen);addI(termScreen,'터미널','cipher');
   // Terminal base
   const tBase=new THREE.Mesh(new THREE.BoxGeometry(.3,.04,.15),dark(0x151525));
   tBase.position.set(0,.92,3.2);scene.add(tBase);
   // Note
   const note=new THREE.Mesh(new THREE.BoxGeometry(.2,.008,.14),
     glow(0x999977,0x222210,.3));
-  note.position.set(.95,.93,3.35);scene.add(note);addI(note,'Note','note');
+  note.position.set(.95,.93,3.35);scene.add(note);addI(note,'메모','note');
   // Chair
   const chairSeat=new THREE.Mesh(new THREE.BoxGeometry(.5,.04,.5),dark(0x1a1a28));
   chairSeat.position.set(0,.55,2.6);scene.add(chairSeat);
@@ -377,12 +377,12 @@ function buildObjects(){
     b.position.set(-4.72,.7+Math.floor(i/3)*.6,-2.1+i*.18);scene.add(b)});
   // Tablet
   const tablet=new THREE.Mesh(new THREE.BoxGeometry(.15,.22,.02),glow(0x1a2a3a,0x002020,.5));
-  tablet.position.set(-4.72,1.92,-1.65);scene.add(tablet);addI(tablet,'Data Tablet','tablet');
+  tablet.position.set(-4.72,1.92,-1.65);scene.add(tablet);addI(tablet,'데이터 태블릿','tablet');
   // Mirror
   const mirror=new THREE.Mesh(new THREE.PlaneGeometry(.9,1.3),
     new THREE.MeshStandardMaterial({color:0x0a0a1a,metalness:.95,roughness:.05,emissive:0x050515,emissiveIntensity:.2}));
   mirror.position.set(-4.98,1.8,.5);mirror.rotation.y=Math.PI/2;scene.add(mirror);
-  addI(mirror,'Mirror','mirror');
+  addI(mirror,'거울','mirror');
   // Mirror frame
   const mfm=dark(0x1a1a2e);
   [[-4.97,1.8,-.01],[-4.97,1.8,1.01]].forEach(p=>{
@@ -391,7 +391,7 @@ function buildObjects(){
     const f=new THREE.Mesh(new THREE.BoxGeometry(.04,.04,.98),mfm);f.position.set(...p);scene.add(f)});
   // Safe
   const safe=new THREE.Mesh(new THREE.BoxGeometry(.38,.32,.32),glow(0x1a1a2e,0x001515,.4));
-  safe.position.set(-4.78,.5,2.2);scene.add(safe);addI(safe,'Wall Safe','safe');
+  safe.position.set(-4.78,.5,2.2);scene.add(safe);addI(safe,'벽 금고','safe');
   // Safe dial
   const dial=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.02,16),
     new THREE.MeshStandardMaterial({color:0x333344,metalness:.8}));
@@ -403,7 +403,7 @@ function buildObjects(){
   ped.position.set(0,.45,0);scene.add(ped);
   orbMesh=new THREE.Mesh(new THREE.SphereGeometry(.22,32,32),
     new THREE.MeshStandardMaterial({color:0x00d4ff,emissive:0x006688,emissiveIntensity:.6,metalness:.2,roughness:.2}));
-  orbMesh.position.set(0,1.15,0);scene.add(orbMesh);addI(orbMesh,'VOID Core','simon');
+  orbMesh.position.set(0,1.15,0);scene.add(orbMesh);addI(orbMesh,'VOID 코어','simon');
   // Orb inner glow ring
   const ring=new THREE.Mesh(new THREE.TorusGeometry(.28,.015,8,32),
     new THREE.MeshStandardMaterial({color:0x00f0ff,emissive:0x00aacc,emissiveIntensity:.8,transparent:true,opacity:.5}));
@@ -444,7 +444,7 @@ function showNotif(text){
 }
 function updateInvUI(){
   inventoryEl.innerHTML='';
-  const names={decryption_key:'🔑 Decryption Key',keycard:'💳 Hexagonal Keycard'};
+  const names={decryption_key:'🔑 복호화 키',keycard:'💳 육각형 키카드'};
   GS.inventory.forEach(it=>{const d=document.createElement('div');d.className='inv-item';d.textContent=names[it]||it;inventoryEl.appendChild(d)});
 }
 function updateTimerUI(){
@@ -492,14 +492,14 @@ function doAction(action){
     case'tablet':openPuzzle('tablet');break;
     case'safe':openPuzzle('safe');break;
     case'cipher':
-      if(!GS.powerOn){showNotif('⚠ Terminal offline. Restore power first.');return}
-      if(!GS.inventory.includes('decryption_key')){showNotif('🔒 DECRYPTION KEY REQUIRED');return}
+      if(!GS.powerOn){showNotif('⚠ 터미널 오프라인. 먼저 전원을 복구하세요.');return}
+      if(!GS.inventory.includes('decryption_key')){showNotif('🔒 복호화 키가 필요합니다');return}
       openPuzzle('cipher');break;
     case'simon':
-      if(!GS.solved.cipher){showNotif('⚠ Core dormant. Decrypt activation sequence first.');return}
+      if(!GS.solved.cipher){showNotif('⚠ 코어 비활성. 먼저 활성화 시퀀스를 복호화하세요.');return}
       openPuzzle('simon');break;
     case'keypad':
-      if(!GS.inventory.includes('keycard')){showNotif('🔒 KEYCARD REQUIRED');return}
+      if(!GS.inventory.includes('keycard')){showNotif('🔒 키카드가 필요합니다');return}
       openPuzzle('keypad');break;
     case'note':openPuzzle('note');break;
   }
@@ -519,12 +519,12 @@ function closePuzzle(){GS.puzzleOpen=false;puzzleModal.classList.remove('active'
 // ========== PUZZLE 1: WIRE ==========
 function pzWire(){
   const el=puzzleContent;
-  if(GS.solved.wire){el.innerHTML='<div class="puzzle-title">⚡ ELECTRICAL PANEL</div><p style="text-align:center;color:#0f6;margin:2rem 0">POWER RESTORED — All systems nominal.</p>';return}
+  if(GS.solved.wire){el.innerHTML='<div class="puzzle-title">⚡ 전기 패널</div><p style="text-align:center;color:#0f6;margin:2rem 0">전원 복구 완료 — 모든 시스템 정상.</p>';return}
   const rightOrder=['green','yellow','red','blue'];
   const colorHex={red:'#ff3344',blue:'#3366ff',green:'#33cc55',yellow:'#cccc33'};
   const colors=['red','blue','green','yellow'];
   let sel=null,connected={},count=0;
-  el.innerHTML='<div class="puzzle-title">⚡ ELECTRICAL PANEL</div><div class="puzzle-desc">Connect matching color terminals to restore power</div><div class="wire-container"><div class="wire-side" id="wl"></div><div class="wire-mid">---</div><div class="wire-side" id="wr"></div></div>';
+  el.innerHTML='<div class="puzzle-title">⚡ 전기 패널</div><div class="puzzle-desc">같은 색 단자를 연결하여 전원을 복구하세요</div><div class="wire-container"><div class="wire-side" id="wl"></div><div class="wire-mid">---</div><div class="wire-side" id="wr"></div></div>';
   const wl=$('wl'),wr=$('wr');
   colors.forEach(c=>{
     const t=document.createElement('div');t.className='wire-terminal';
@@ -550,7 +550,7 @@ function pzWire(){
           GS.solved.wire=true;GS.powerOn=true;
           termScreen.material.emissive.set(0x003311);termScreen.material.emissiveIntensity=.4;
           termLight.intensity=.4;
-          showNotif('⚡ POWER RESTORED — Terminal online');closePuzzle();
+          showNotif('⚡ 전원 복구 — 터미널 온라인');closePuzzle();
         },400);
       }else{
         playError();sel.elem.classList.remove('selected');sel=null;
@@ -563,31 +563,31 @@ function pzWire(){
 
 // ========== PUZZLE 2A: MIRROR ==========
 function pzMirror(){
-  puzzleContent.innerHTML=`<div class="puzzle-title">🪞 MIRROR</div>
-    <div class="puzzle-desc">Strange symbols float in the dark reflection...</div>
+  puzzleContent.innerHTML=`<div class="puzzle-title">🪞 거울</div>
+    <div class="puzzle-desc">어두운 반사 속에 이상한 기호들이 떠다닌다...</div>
     <div class="symbol-display">
       <span style="animation-delay:0s">△</span><span style="animation-delay:.3s">○</span>
       <span style="animation-delay:.6s">□</span><span style="animation-delay:.9s">⬡</span>
-    </div><p style="text-align:center;color:#444;font-size:.8rem;margin-top:1.5rem">These symbols must correspond to something...</p>`;
+    </div><p style="text-align:center;color:#444;font-size:.8rem;margin-top:1.5rem">이 기호들은 무언가에 대응하는 것 같다...</p>`;
 }
 
 // ========== PUZZLE 2B: TABLET ==========
 function pzTablet(){
-  puzzleContent.innerHTML=`<div class="puzzle-title">📱 VOID SYMBOL REFERENCE</div>
-    <div class="puzzle-desc">Official Symbol-to-Number Mapping</div>
+  puzzleContent.innerHTML=`<div class="puzzle-title">📱 VOID 기호 참조표</div>
+    <div class="puzzle-desc">공식 기호-숫자 대응표</div>
     <div class="symbol-ref">
       <div class="symbol-ref-item"><span class="sym">△</span><span>=</span><span class="num">7</span></div>
       <div class="symbol-ref-item"><span class="sym">○</span><span>=</span><span class="num">3</span></div>
       <div class="symbol-ref-item"><span class="sym">□</span><span>=</span><span class="num">9</span></div>
       <div class="symbol-ref-item"><span class="sym">⬡</span><span>=</span><span class="num">1</span></div>
-    </div><p style="text-align:center;color:#444;font-size:.8rem;margin-top:1rem">Project VOID — Classification: RESTRICTED</p>`;
+    </div><p style="text-align:center;color:#444;font-size:.8rem;margin-top:1rem">프로젝트 VOID — 보안등급: 제한</p>`;
 }
 
 // ========== PUZZLE 2C: SAFE ==========
 function pzSafe(){
   const el=puzzleContent;
-  if(GS.solved.safe){el.innerHTML='<div class="puzzle-title">🔓 SAFE OPENED</div><p style="text-align:center;color:#666;margin:2rem 0">The safe is empty.</p>';return}
-  el.innerHTML='<div class="puzzle-title">🔒 WALL SAFE</div><div class="puzzle-desc">Enter 4-digit combination</div><div class="safe-digits" id="sd"></div><button class="puzzle-btn" id="safe-go">UNLOCK</button><div class="puzzle-msg" id="safe-msg"></div>';
+  if(GS.solved.safe){el.innerHTML='<div class="puzzle-title">🔓 금고 열림</div><p style="text-align:center;color:#666;margin:2rem 0">금고가 비어 있다.</p>';return}
+  el.innerHTML='<div class="puzzle-title">🔒 벽 금고</div><div class="puzzle-desc">4자리 비밀번호를 입력하세요</div><div class="safe-digits" id="sd"></div><button class="puzzle-btn" id="safe-go">잠금 해제</button><div class="puzzle-msg" id="safe-msg"></div>';
   const sd=$('sd');const vals=[0,0,0,0];
   for(let i=0;i<4;i++){
     const d=document.createElement('div');d.className='safe-digit';
@@ -602,9 +602,9 @@ function pzSafe(){
     const code=vals.join('');
     if(code==='7391'){
       GS.solved.safe=true;GS.inventory.push('decryption_key');updateInvUI();
-      playSuccess();showNotif('🔑 DECRYPTION KEY acquired!');closePuzzle();
+      playSuccess();showNotif('🔑 복호화 키 획득!');closePuzzle();
     }else{
-      playError();const msg=$('safe-msg');if(msg){msg.textContent='❌ ACCESS DENIED';msg.style.color='#ff3333';
+      playError();const msg=$('safe-msg');if(msg){msg.textContent='❌ 접근 거부';msg.style.color='#ff3333';
       setTimeout(()=>{if(msg)msg.textContent=''},1500)}
     }
   };
@@ -614,19 +614,19 @@ function pzSafe(){
 function pzCipher(){
   const el=puzzleContent;
   if(GS.solved.cipher){
-    el.innerHTML=`<div class="puzzle-title">💻 TERMINAL</div><div class="terminal-screen">
-      <div class="prompt">&gt; DECRYPTION COMPLETE</div>
-      <div class="data">&gt; THE CORE AWAITS: BLUE RED GREEN BLUE RED</div>
-      <div class="data">&gt; PARTIAL EXIT CODE RECOVERED: 82____</div></div>`;return}
+    el.innerHTML=`<div class="puzzle-title">💻 터미널</div><div class="terminal-screen">
+      <div class="prompt">&gt; 복호화 완료</div>
+      <div class="data">&gt; 코어가 기다린다: 파랑 빨강 초록 파랑 빨강</div>
+      <div class="data">&gt; 부분 탈출 코드 복구: 82____</div></div>`;return}
   const enc="GUR PBER NJNVGF: OYHR ERQ TERRA OYHR ERQ";
-  el.innerHTML=`<div class="puzzle-title">💻 TERMINAL</div><div class="terminal-screen">
-    <div class="prompt">&gt; ENCRYPTED TRANSMISSION RECOVERED:</div>
+  el.innerHTML=`<div class="puzzle-title">💻 터미널</div><div class="terminal-screen">
+    <div class="prompt">&gt; 암호화된 전송 데이터 복구:</div>
     <div class="data" id="ct">"${enc}"</div><br>
-    <div class="prompt">&gt; CAESAR CIPHER DETECTED. APPLY SHIFT TO DECRYPT.</div><br>
-    <div class="cipher-shift-label">SHIFT: <span id="sv">0</span></div>
+    <div class="prompt">&gt; 시저 암호 감지. 시프트를 적용하여 복호화하세요.</div><br>
+    <div class="cipher-shift-label">시프트: <span id="sv">0</span></div>
     <input type="range" class="cipher-slider" id="cs" min="0" max="25" value="0">
-    <div class="prompt" id="cr" style="display:none;margin-top:.8rem">&gt; PARTIAL EXIT CODE RECOVERED: 82____</div>
-  </div><button class="puzzle-btn" id="cc" style="display:none;margin-top:1rem">CONFIRM DECRYPTION</button>`;
+    <div class="prompt" id="cr" style="display:none;margin-top:.8rem">&gt; 부분 탈출 코드 복구: 82____</div>
+  </div><button class="puzzle-btn" id="cc" style="display:none;margin-top:1rem">복호화 확인</button>`;
   $('cs').oninput=function(){
     const s=parseInt(this.value);$('sv').textContent=s;
     $('ct').textContent='"'+caesarShift(enc,s)+'"';
@@ -634,7 +634,7 @@ function pzCipher(){
   };
   $('cc').onclick=()=>{
     GS.solved.cipher=true;playSuccess();
-    showNotif('💻 Sequence: BLUE RED GREEN BLUE RED | Code fragment: 82');closePuzzle();
+    showNotif('💻 시퀀스: 파랑 빨강 초록 파랑 빨강 | 코드 조각: 82');closePuzzle();
   };
 }
 function caesarShift(t,s){
@@ -646,18 +646,18 @@ function caesarShift(t,s){
 // ========== PUZZLE 4: SIMON SAYS ==========
 function pzSimon(){
   const el=puzzleContent;
-  if(GS.solved.simon){el.innerHTML='<div class="puzzle-title">🔮 VOID CORE</div><p style="text-align:center;color:#0f6;margin:2rem 0">Core activated. SEQUENCE: 31</p>';return}
+  if(GS.solved.simon){el.innerHTML='<div class="puzzle-title">🔮 VOID 코어</div><p style="text-align:center;color:#0f6;margin:2rem 0">코어 활성화 완료. 시퀀스: 31</p>';return}
   const seqs=[rndColors(3),rndColors(4),['blue','red','green','blue','red']];
   let round=0,playerIn=[],canInput=false;
   const tones={blue:261.6,red:329.6,green:392,yellow:493.9};
-  el.innerHTML=`<div class="puzzle-title">🔮 VOID CORE — Simon Sequence</div>
-    <div class="puzzle-desc">Watch the pattern, then repeat it</div>
+  el.innerHTML=`<div class="puzzle-title">🔮 VOID 코어 — 사이먼 시퀀스</div>
+    <div class="puzzle-desc">패턴을 관찰한 후 따라하세요</div>
     <div class="simon-container"><div class="simon-board" id="sb">
       <div class="simon-quad blue" data-c="blue"></div>
       <div class="simon-quad red" data-c="red"></div>
       <div class="simon-quad green" data-c="green"></div>
       <div class="simon-quad yellow" data-c="yellow"></div>
-    </div><div class="simon-status" id="ss">Round 1 / 3 — Watch...</div></div>`;
+    </div><div class="simon-status" id="ss">라운드 1 / 3 — 관찰하세요...</div></div>`;
   const quads=el.querySelectorAll('.simon-quad');
   quads.forEach(q=>{q.onclick=()=>{
     if(!canInput)return;const c=q.dataset.c;
@@ -665,19 +665,19 @@ function pzSimon(){
     const idx=playerIn.length-1;
     if(playerIn[idx]!==seqs[round][idx]){
       playError();playerIn=[];canInput=false;
-      const ss=$('ss');if(ss)ss.textContent='❌ SEQUENCE ERROR — Restarting...';
+      const ss=$('ss');if(ss)ss.textContent='❌ 시퀀스 오류 — 재시작...';
       setTimeout(()=>playSeq(),1200);return;
     }
     if(playerIn.length===seqs[round].length){
       canInput=false;playerIn=[];playSuccess();round++;
       if(round>=3){
-        const ss=$('ss');if(ss)ss.textContent='✅ CORE ACTIVATED';
+        const ss=$('ss');if(ss)ss.textContent='✅ 코어 활성화';
         setTimeout(()=>{
           GS.solved.simon=true;GS.inventory.push('keycard');updateInvUI();
-          showNotif('🔮 CORE ACTIVATED — SEQUENCE: 31 — 💳 KEYCARD acquired!');closePuzzle();
+          showNotif('🔮 코어 활성화 — 시퀀스: 31 — 💳 키카드 획득!');closePuzzle();
         },1500);
       }else{
-        const ss=$('ss');if(ss)ss.textContent=`Round ${round+1} / 3 — Watch...`;
+        const ss=$('ss');if(ss)ss.textContent=`라운드 ${round+1} / 3 — 관찰하세요...`;
         setTimeout(()=>playSeq(),800);
       }
     }
@@ -685,12 +685,12 @@ function pzSimon(){
   function flash(q,dur){q.classList.add('flash');setTimeout(()=>q.classList.remove('flash'),dur)}
   function playSeq(){
     canInput=false;const seq=seqs[round];
-    const ss=$('ss');if(ss)ss.textContent=`Round ${round+1} / 3 — Watch...`;
+    const ss=$('ss');if(ss)ss.textContent=`라운드 ${round+1} / 3 — 관찰하세요...`;
     seq.forEach((c,i)=>{setTimeout(()=>{
       const q=el.querySelector(`.simon-quad.${c}`);if(q)flash(q,500);
       playTone(tones[c],.3,'sine',.1);
     },i*750)});
-    setTimeout(()=>{canInput=true;const ss=$('ss');if(ss)ss.textContent=`Round ${round+1} / 3 — Your turn!`},seq.length*750+400);
+    setTimeout(()=>{canInput=true;const ss=$('ss');if(ss)ss.textContent=`라운드 ${round+1} / 3 — 당신 차례!`},seq.length*750+400);
   }
   setTimeout(()=>playSeq(),600);
 }
@@ -699,14 +699,14 @@ function rndColors(n){const c=['blue','red','green','yellow'];return Array.from(
 // ========== PUZZLE 5: KEYPAD ==========
 function pzKeypad(){
   const el=puzzleContent;let input='';
-  el.innerHTML=`<div class="puzzle-title">🚪 EXIT KEYPAD</div><div class="puzzle-desc">Enter 6-digit exit code</div>
+  el.innerHTML=`<div class="puzzle-title">🚪 탈출 키패드</div><div class="puzzle-desc">6자리 탈출 코드를 입력하세요</div>
     <div class="keypad-display" id="kd">______</div>
     <div class="keypad-grid" id="kg"></div><div class="puzzle-msg" id="km"></div>`;
   const kg=$('kg');
   for(let i=1;i<=9;i++)addKB(String(i),()=>addD(i));
-  addKB('CLR',()=>{input='';updD()},true);
+  addKB('지움',()=>{input='';updD()},true);
   addKB('0',()=>addD(0));
-  addKB('ENTER',()=>chk(),false,true);
+  addKB('확인',()=>chk(),false,true);
   function addKB(label,fn,isClear,isEnter){
     const b=document.createElement('button');b.className='keypad-btn'+(isClear?' clear':'')+(isEnter?' enter':'');
     b.textContent=label;b.onclick=fn;kg.appendChild(b);
@@ -717,7 +717,7 @@ function pzKeypad(){
     if(input==='820731'){GS.solved.door=true;playSuccess();closePuzzle();doVictory()}
     else{
       playError();const km=$('km');
-      if(km){km.textContent='❌ INVALID CODE';km.style.color='#ff3333'}
+      if(km){km.textContent='❌ 잘못된 코드';km.style.color='#ff3333'}
       input='';updD();setTimeout(()=>{const km=$('km');if(km)km.textContent=''},1500);
     }
   }
@@ -725,14 +725,14 @@ function pzKeypad(){
 
 // ========== NOTE ==========
 function pzNote(){
-  puzzleContent.innerHTML=`<div class="puzzle-title">📄 PROJECT NOTE</div>
+  puzzleContent.innerHTML=`<div class="puzzle-title">📄 프로젝트 메모</div>
     <div class="note-content">
-      <p>VOID Project — Classified Document</p><br>
-      <p>Session Phase: <strong>07</strong></p>
-      <p>Subject: 7</p>
-      <p>Status: <span style="color:#ff3333">CRITICAL</span></p><br>
-      <p style="color:#444;font-size:.8rem">WARNING: Emergency exit protocol compromised.<br>
-      All override codes have been fragmented across subsystems.</p>
+      <p>VOID 프로젝트 — 기밀 문서</p><br>
+      <p>세션 단계: <strong>07</strong></p>
+      <p>피험자: 7번</p>
+      <p>상태: <span style="color:#ff3333">위험</span></p><br>
+      <p style="color:#444;font-size:.8rem">경고: 비상 탈출 프로토콜 손상됨.<br>
+      모든 무효화 코드가 하위 시스템에 분산되어 있음.</p>
     </div>`;
 }
 
